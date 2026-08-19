@@ -42,6 +42,52 @@ jobs:
       - name: Build contract
         run: stellar contract build
 
+  determinism:
+    name: WASM Determinism
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v7
+      - name: Pin Rust toolchain
+        uses: dtolnay/rust-toolchain@master
+        with:
+          # Pinned to a specific version to ensure reproducible builds.
+          # EXPECTED BEHAVIOR: If the project updates its toolchain and uses new
+          # features, this job will loudly fail to compile. When that happens,
+          # you must update this pinned version to match the new toolchain.
+          toolchain: 1.81.0
+          targets: wasm32-unknown-unknown,wasm32v1-none
+      - name: Install native build dependencies
+        run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev libudev-dev pkg-config
+      - name: Install Stellar CLI
+        run: cargo install --locked stellar-cli
+      - name: Build WASM (First Pass)
+        run: |
+          stellar contract build
+          mkdir -p build-1
+          cp target/wasm32v1-none/release/*.wasm build-1/
+      - name: Clean target directory
+        run: cargo clean
+      - name: Build WASM (Second Pass)
+        run: |
+          stellar contract build
+          mkdir -p build-2
+          cp target/wasm32v1-none/release/*.wasm build-2/
+      - name: Compare artifacts byte-for-byte
+        run: |
+          echo "Comparing WASM artifacts for determinism..."
+          for file in build-1/*.wasm; do
+            filename=$(basename "$file")
+            echo "Checking $filename..."
+            cmp "build-1/$filename" "build-2/$filename" || {
+              echo "::error::Determinism check failed for $filename!"
+              echo "The WASM artifact is not byte-for-byte identical across builds."
+              echo "This usually indicates the use of non-deterministic macros (e.g. timestamps, absolute paths)."
+              exit 1
+            }
+          done
+          echo "All WASM artifacts are byte-for-byte identical."
+
   commitlint:
     name: Conventional Commits
     runs-on: ubuntu-latest
