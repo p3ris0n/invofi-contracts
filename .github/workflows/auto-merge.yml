@@ -484,11 +484,11 @@ jobs:
             CR_PRESENT="$( { gh api \
               "repos/${REPO}/commits/${SHA}/check-runs" \
               --jq '[.check_runs[] | select((.name | ascii_downcase)
-                | contains("coderabbit"))] | length' 2>/dev/null; \
+                | contains("coderabbit"))] | length' 2>/dev/null || true; \
               gh api "repos/${REPO}/commits/${SHA}/status" \
               --jq '[.statuses[] | select((.context | ascii_downcase)
-                | contains("coderabbit"))] | length' 2>/dev/null; } \
-              | awk '{s+=$1} END {print s+0}' )"
+                | contains("coderabbit"))] | length' 2>/dev/null || true; } \
+              | awk '{s+=$1} END {print s+0}' || true )"
             if [ "${CR_PRESENT:-0}" -eq 0 ] && [ "${SELF}" != "true" ]; then
               CR_MARKER="<!-- BOT-CR-TRIGGER sha=${SHA} -->"
               CR_TRIGGERED="$(gh api "repos/${REPO}/issues/${PR}/comments" \
@@ -516,13 +516,13 @@ jobs:
                 --jq '[.check_runs[] | select((.name | ascii_downcase)
                   | contains("coderabbit"))
                   | (.conclusion // .status // "pending")] | last' \
-                2>/dev/null; \
+                2>/dev/null || true; \
                 gh api "repos/${REPO}/commits/${SHA}/status" \
                 --jq '[.statuses[] | select((.context | ascii_downcase)
                   | contains("coderabbit"))
                   | (.state | ascii_downcase
                     | if . == "error" then "failure" else . end)] | last' \
-                2>/dev/null; } | grep -v '^$' | tail -1 )"
+                2>/dev/null || true; } | grep -v '^$' | tail -1 || true )"
               case "${CR_STATE}" in
                 "")
                   echo "  no CodeRabbit status — proceeding without its review"

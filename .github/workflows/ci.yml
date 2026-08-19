@@ -55,7 +55,7 @@ jobs:
           # EXPECTED BEHAVIOR: If the project updates its toolchain and uses new
           # features, this job will loudly fail to compile. When that happens,
           # you must update this pinned version to match the new toolchain.
-          toolchain: 1.81.0
+          toolchain: 1.84.0
           targets: wasm32-unknown-unknown,wasm32v1-none
       - name: Install native build dependencies
         run: sudo apt-get update && sudo apt-get install -y libdbus-1-dev libudev-dev pkg-config

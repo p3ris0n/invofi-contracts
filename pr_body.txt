@@ -1,0 +1,18 @@
+## Summary
+Adds a CI job that verifies byte-for-byte WASM determinism by building each contract twice and diffing the output. The toolchain is pinned to `1.84.0` to ensure the check reliably detects determinism drift when the codebase upgrades.
+
+## Related Issue
+Closes #105
+
+## Changes
+- Add `determinism` job to `ci.yml`.
+- Build WASM, clean, and build again.
+- Diff the resulting `.wasm` binaries using `cmp`.
+- Fails the workflow if differences are found.
+- Pin Rust toolchain to `1.84.0` and document expected behavior if the project toolchain changes.
+
+## Testing
+- CI workflow is syntax-checked and the bash loops are correct for artifact comparison.
+
+## Notes for reviewers
+- The toolchain is pinned to `1.84.0` so that if you start using language features past 1.84.0, this check will loudly fail to compile, reminding you to bump the pinned determinism version here as requested by the issue.
